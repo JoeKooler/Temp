@@ -1,0 +1,113 @@
+'''assembly
+.data
+
+@ Define all the strings and data we will use
+.balign 4
+get_val_1: .asciz "Number 1 :\n"
+
+.balign 4
+get_val_2: .asciz "Number 2 :\n"
+@ printf and scanf use %d to represent the decimal numbers
+
+.balign 4
+pattern: .asciz "%d"
+@ Where we store values to sum
+
+.balign 4
+num_1: .word 0
+
+.balign 4
+num_2: .word 0
+
+@ Output for printf
+.balign 4
+
+output: .asciz "%d + %d = %d\n"
+@ Used for backing up the link register
+
+.balign 4
+lr_bu: .word 0
+
+.balign 4
+lr_bu_2: .word 0
+
+.text
+
+@ Create our custom function
+@ Can receive values R0-R3
+
+sum_vals:
+	@ Save Link Register
+	LDR R2, addr_lr_bu_2
+	STR lr,[R2]
+	@ Sum values and return in R0
+	ADD R0, R0, R1
+	@ Restore Link Register
+	LDR lr, addr_lr_bu_2
+	LDR lr, [lr]
+	BX lr
+
+@ Address to store Link Register in
+addr_lr_bu_2: .word lr_bu_2
+
+@ Tell LIBC where main is
+
+.global main
+main:
+	@ Store Link Register
+	LDR R1, addr_lr_bu
+	STR lr, [R1]
+	
+	@ Print out message to get 1st value
+	LDR R0, addr_get_val_1
+	BL printf
+	
+	@ Save value entered
+	LDR R0, addr_pattern
+	LDR R1, addr_num_1
+	BL scanf
+
+	LDR R0, addr_get_val_2
+	BL printf
+
+	LDR R0, addr_pattern
+	LDR R1, addr_num_2
+	BL scanf
+
+	@ Send values entered to our custom function
+	LDR R0, addr_num_1
+	LDR R0, [R0]
+	LDR R1, addr_num_2
+	LDR R1, [R1]
+	BL sum_vals
+
+	@ Store value returned from function in R3
+	MOV R3, R0
+	
+	@ Assign values to sum for output
+	LDR R0, addr_output
+	LDR R1, addr_num_1
+	LDR R1, [R1]
+	LDR R2, addr_num_2
+	LDR R2, [R2]
+	BL printf
+	
+	@ Restore Link Register
+	LDR lr, addr_lr_bu
+	LDR lr, [lr]
+	BX lr
+
+@ Define addresses
+addr_get_val_1: .word get_val_1
+addr_get_val_2: .word get_val_2
+addr_pattern: .word pattern
+addr_num_1: .word num_1
+addr_num_2: .word num_2
+addr_output: .word output
+addr_lr_bu: .word lr_bu
+
+@ Define we want to use prinf and scanf
+.global printf
+.global scanf
+
+'''
